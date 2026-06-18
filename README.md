@@ -10,7 +10,7 @@
 
 A faithful recreation of the classic Nokia Snake game with modern enhancements. Built with Python and pygame-ce.
 
-> **Latest version: v1.2.0** — [View Changelog](CHANGELOG.md)
+> **Latest version: v1.1.0** — [View Changelog](CHANGELOG.md)
 
 ## Features
 
