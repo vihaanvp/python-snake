@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 - Fullscreen mode with F11 toggle (game starts in fullscreen by default)
 - Interactive pause menu with Resume and Quit to Main Menu buttons
   - Navigate with UP/DOWN arrows, select with ENTER/SPACE
+- **Resolution-aware rendering**: game now detects the display resolution and
+  computes an optimal cell size to fill the screen at native quality
+  - All fonts, insets, eye sizes, spacing, and borders are scaled proportionally
+  - Text is rendered at the scaled font size directly (not upscaled), so it
+    stays crisp and anti-aliased at any display resolution
+  - Grid lines, HUD elements, menu items, pause overlay — everything adapts
 
 ### Changed
 - Pause key changed from P to ESC
