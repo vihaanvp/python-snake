@@ -9,8 +9,12 @@ All notable changes to this project will be documented in this file.
   - Buffers up to 3 direction changes so quick corner turns register correctly
   - Eliminates the "ignored key press" issue during fast play
 - 5 new maze levels: Box, Tunnel, Maze, Zigzag, Fortress (total now 11 levels)
+- Fullscreen mode with F11 toggle (game starts in fullscreen by default)
+- Interactive pause menu with Resume and Quit to Main Menu buttons
+  - Navigate with UP/DOWN arrows, select with ENTER/SPACE
 
 ### Changed
+- Pause key changed from P to ESC
 - Version updated to v1.2.0
 - README.md corrected to reference `main.py` instead of the old `snake.py`
 

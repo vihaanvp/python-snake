@@ -605,12 +605,6 @@ class SnakeGame:
         best = self.score_keeper.get_best(self.get_mode_name())
         if best > 0:
             surface.blit(font.render(f"BEST: {best}", True, YELLOW), (WINDOW_WIDTH - mode_text.get_width() - 10, 30))
-        if self.paused:
-            overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
-            overlay.fill((0, 0, 0, 140))
-            surface.blit(overlay, (0, 0))
-            draw_text(surface, "PAUSED", 52, YELLOW, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 20)
-            draw_text(surface, "Press P to resume", 20, WHITE, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 30)
         if self.won:
             overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 160))
@@ -710,26 +704,47 @@ def main_menu(surface, clock, score_keeper) -> Optional[str]:
 
 def run_game(surface, clock, game: SnakeGame, score_keeper: ScoreKeeper):
     tick_timer = 0.0
+    paused_selection = 0
     while True:
         dt = clock.tick(60)
         tick_timer += dt
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                return "quit"
+                return "quit", surface
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_F11:
+                    flags = surface.get_flags()
+                    is_fs = flags & pygame.FULLSCREEN
+                    new_flags = 0 if is_fs else (pygame.FULLSCREEN | pygame.SCALED)
+                    surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), new_flags)
+                    continue
                 if game.game_over or game.won:
                     if event.key == pygame.K_SPACE:
                         if game.score > 0:
                             score_keeper.add_score(ScoreEntry(score=game.score, mode=game.get_mode_name(), length=len(game.body)))
                         game.reset()
                         tick_timer = 0.0
+                        paused_selection = 0
                     elif event.key == pygame.K_ESCAPE:
                         if game.score > 0:
                             score_keeper.add_score(ScoreEntry(score=game.score, mode=game.get_mode_name(), length=len(game.body)))
-                        return "menu"
-                else:
-                    if event.key == pygame.K_p:
+                        return "menu", surface
+                elif game.paused:
+                    if event.key in (pygame.K_UP, pygame.K_DOWN):
+                        paused_selection = 1 - paused_selection
+                    elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                        if paused_selection == 0:
+                            game.toggle_pause()
+                        else:
+                            if game.score > 0:
+                                score_keeper.add_score(ScoreEntry(score=game.score, mode=game.get_mode_name(), length=len(game.body)))
+                            return "menu", surface
+                    elif event.key == pygame.K_ESCAPE:
                         game.toggle_pause()
+                else:
+                    if event.key == pygame.K_ESCAPE:
+                        game.toggle_pause()
+                        paused_selection = 0
                     if not game.paused:
                         if event.key in (pygame.K_UP, pygame.K_w):
                             game.change_direction(UP)
@@ -750,16 +765,38 @@ def run_game(surface, clock, game: SnakeGame, score_keeper: ScoreKeeper):
         game.draw(surface)
         if game.paused:
             overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
-            overlay.fill((0, 0, 0, 140))
+            overlay.fill((0, 0, 0, 160))
             surface.blit(overlay, (0, 0))
-            draw_text(surface, "PAUSED", 52, YELLOW, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 20)
-            draw_text(surface, "Press P to resume", 20, WHITE, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 30)
+            draw_text(surface, "PAUSED", 52, YELLOW, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 60)
+            pause_items = ["Resume", "Quit to Main Menu"]
+            for i, label in enumerate(pause_items):
+                y = WINDOW_HEIGHT // 2 - 10 + i * 45
+                colour = YELLOW if i == paused_selection else WHITE
+                font = pygame.font.SysFont("monospace", 28, bold=True)
+                if i == paused_selection:
+                    glow = pygame.Surface((200, 36), pygame.SRCALPHA)
+                    pulse = math.sin(pygame.time.get_ticks() * 0.006) * 0.3 + 0.7
+                    glow_colour = (YELLOW[0], YELLOW[1], YELLOW[2], int(120 * pulse))
+                    pygame.draw.rect(glow, glow_colour, glow.get_rect(), border_radius=6)
+                    surface.blit(glow, (WINDOW_WIDTH // 2 - 100, y - 18))
+                    pointer = font.render(">", True, YELLOW)
+                    p_rect = pointer.get_rect(midright=(WINDOW_WIDTH // 2 - 90, y))
+                    surface.blit(pointer, p_rect)
+                    pointer2 = font.render("<", True, YELLOW)
+                    p2_rect = pointer2.get_rect(midleft=(WINDOW_WIDTH // 2 + 90, y))
+                    surface.blit(pointer2, p2_rect)
+                text = font.render(label, True, colour)
+                rect = text.get_rect(center=(WINDOW_WIDTH // 2, y))
+                surface.blit(text, rect)
+            hint_font = pygame.font.SysFont("monospace", 14)
+            hint = hint_font.render("UP/DOWN navigate  |  ENTER select  |  ESC resume", True, GREY)
+            surface.blit(hint, (WINDOW_WIDTH // 2 - hint.get_width() // 2, WINDOW_HEIGHT // 2 + 80))
         pygame.display.flip()
 
 def main():
     pygame.init()
     pygame.display.set_caption("Snake — Nokia Classic Extended")
-    screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+    screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.FULLSCREEN | pygame.SCALED)
     clock = pygame.time.Clock()
     score_keeper = ScoreKeeper()
     game = SnakeGame(score_keeper)
@@ -779,7 +816,7 @@ def main():
         elif action == "scores":
             high_scores_screen(screen, clock, score_keeper)
             continue
-        result = run_game(screen, clock, game, score_keeper)
+        result, screen = run_game(screen, clock, game, score_keeper)
         if result == "quit":
             break
     pygame.quit()
