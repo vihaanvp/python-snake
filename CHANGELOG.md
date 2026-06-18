@@ -29,6 +29,7 @@ All notable changes to this project will be documented in this file.
 - Reduced initial snake speed for better early-game feel
 - Directory structure reorganised: icons in `icons/`, EXE in `builds/`
 - `generate_icon.py` output paths updated to save into `icons/` folder
+- Refactored `snake.py` to `main.py` — simplified codebase, removed all comments, compressed maze data using string representation, removed unused code
 
 ## [1.0.0] — 2026-06-18
 
