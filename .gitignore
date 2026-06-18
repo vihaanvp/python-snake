@@ -1,0 +1,91 @@
+# =============================================================================
+# Python
+# =============================================================================
+
+# Byte-compiled / cached files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.$py.class
+
+# Distribution / packaging
+build/
+builds/
+dist/
+*.egg-info/
+*.egg
+*.spec
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# =============================================================================
+# JetBrains IDEs (IntelliJ IDEA, PyCharm, etc.)
+# =============================================================================
+.idea/
+*.iml
+out/
+
+# =============================================================================
+# VS Code
+# =============================================================================
+.vscode/
+*.code-workspace
+
+# =============================================================================
+# Project-specific generated files
+# =============================================================================
+
+# Auto-generated high scores (root only)
+/snake_scores.json
+
+# Built portable executable (root only)
+/snake.exe
+
+# Generated root-level icon files (icons/ folder is tracked)
+/snake_logo.png
+/snake_logo.ico
+
+# =============================================================================
+# Operating system files
+# =============================================================================
+
+# macOS
+.DS_Store
+.DS_Store?
+.AppleDouble
+.LSOverride
+Icon$
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+
+# =============================================================================
+# Editor / IDE miscellaneous
+# =============================================================================
+
+# Vim
+*.swp
+*.swo
+*~
+*.un~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
