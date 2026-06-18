@@ -3,6 +3,8 @@ import random
 import sys
 import json
 import os
+import math
+from collections import deque
 from dataclasses import dataclass, asdict
 from typing import List, Tuple, Optional
 
@@ -23,6 +25,8 @@ RED = (200, 30, 30)
 YELLOW = (255, 220, 50)
 BLUE = (50, 120, 220)
 ORANGE = (255, 140, 50)
+PURPLE = (180, 80, 200)
+CYAN = (0, 200, 200)
 
 UP = (0, -1)
 DOWN = (0, 1)
@@ -41,6 +45,58 @@ def _parse_maze(rows):
 MAZE_LEVELS = [
     {"name": "Open Field", "maze": None, "start": (COLS // 2, ROWS // 2), "wrap": True},
     {"name": "Bordered", "maze": None, "start": (COLS // 2, ROWS // 2), "wrap": False},
+    {"name": "Box", "maze": _parse_maze([
+        "111111111111111111111111111111",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "100000000111111111100000000001",
+        "100000000100000000100000000001",
+        "100000000100000000100000000001",
+        "100000000100000000100000000001",
+        "100000000100000000100000000001",
+        "100000000100000000100000000001",
+        "100000000100000000100000000001",
+        "100000000100000000100000000001",
+        "100000000100000000100000000001",
+        "100000000100000000100000000001",
+        "100000000100000000100000000001",
+        "100000000100000000100000000001",
+        "100000000111111111100000000001",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+    ]), "start": (3, 12), "wrap": False},
+    {"name": "Tunnel", "maze": _parse_maze([
+        "111111111111111111111111111111",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "111111111110000001111111111111",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "111111111110000001111111111111",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "111111111110000001111111111111",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "111111111110000001111111111111",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "111111111110000001111111111111",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "111111111110000001111111111111",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "111111111110000001111111111111",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+    ]), "start": (3, 12), "wrap": False},
     {"name": "Pillars", "maze": _parse_maze([
         "100000000000000000000000000001",
         "100000000000000000000000000001",
@@ -93,31 +149,83 @@ MAZE_LEVELS = [
         "100111110000111110000111110001",
         "100000000000000000000000000001",
     ]), "start": (5, 12), "wrap": False},
-    {"name": "Spiral", "maze": _parse_maze([
+    {"name": "Maze", "maze": _parse_maze([
         "111111111111111111111111111111",
         "100000000000000000000000000001",
         "101111111111111111111111111101",
-        "101000000000000000000000001101",
-        "101011111111111111111111001101",
-        "101010000000000000000011001101",
-        "101010111111111111111011001101",
-        "101010100000000000001011001101",
-        "101010101111111111101011001101",
-        "101010101000000001101011001101",
-        "101010101011111101101011001101",
-        "101010101000001101101011001101",
-        "101010101011101101101011001101",
-        "101010101000101101101011001101",
-        "101010101011101101101011001101",
-        "101010101000001101101011001101",
-        "101010101011111101101011001101",
-        "101010101000000001101011001101",
-        "101010101111111111101011001101",
-        "101010100000000000001011001101",
-        "101010111111111111111011001101",
-        "101010000000000000000011001101",
-        "101011111111111111111111001101",
-        "101000000000000000000000001101",
+        "101000000000000000000000000101",
+        "101011111111111011111111110101",
+        "101010000000001000000000010101",
+        "101010111111101111111110010101",
+        "101010100000001000000010010101",
+        "101010101111111111111010010101",
+        "101010101000000000001010010101",
+        "101010101011111111101010010101",
+        "101010101010000000101010010101",
+        "101010101010111110101010010101",
+        "101010101010000010101010010101",
+        "101010101011111010101010010101",
+        "101010101000000010101010010101",
+        "101010101111111110101010010101",
+        "101010100000000000101010010101",
+        "101010111111111111101010010101",
+        "101010000000000000001010010101",
+        "101011111111111111111010010101",
+        "101000000000000000000000010101",
+        "101111111111111111111111110101",
+        "100000000000000000000000000001",
+    ]), "start": (2, 2), "wrap": False},
+    {"name": "Zigzag", "maze": _parse_maze([
+        "111111111111111111111111111111",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "111111111111111111100000000001",
+        "100000000000000000100000000001",
+        "100000000000000000100000000001",
+        "100000000000000000111111111111",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "111111111111111111100000000001",
+        "100000000000000000100000000001",
+        "100000000000000000100000000001",
+        "100000000000000000111111111111",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "111111111111111111100000000001",
+        "100000000000000000100000000001",
+        "100000000000000000100000000001",
+        "100000000000000000111111111111",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+    ]), "start": (2, 12), "wrap": False},
+    {"name": "Fortress", "maze": _parse_maze([
+        "111111111111111111111111111111",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "100000111111111111111000000001",
+        "100000100000000000001000000001",
+        "100000100111111110001000000001",
+        "100000100100000010001000000001",
+        "100000100101111010001000000001",
+        "100000100100001010001000000001",
+        "100000100101111010001000000001",
+        "100000100100000010001000000001",
+        "100000100111111110001000000001",
+        "100000100000000000001000000001",
+        "100000111111111111111000000001",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
+        "100000000000000000000000000001",
     ]), "start": (2, 12), "wrap": False},
     {"name": "Crossfire", "maze": _parse_maze([
         "111111111111111111111111111111",
@@ -145,6 +253,32 @@ MAZE_LEVELS = [
         "100000000000000000000000000001",
         "100000000000000000000000000001",
     ]), "start": (5, 12), "wrap": False},
+    {"name": "Spiral", "maze": _parse_maze([
+        "111111111111111111111111111111",
+        "100000000000000000000000000001",
+        "101111111111111111111111111101",
+        "101000000000000000000000001101",
+        "101011111111111111111111001101",
+        "101010000000000000000011001101",
+        "101010111111111111111011001101",
+        "101010100000000000001011001101",
+        "101010101111111111101011001101",
+        "101010101000000001101011001101",
+        "101010101011111101101011001101",
+        "101010101000001101101011001101",
+        "101010101011101101101011001101",
+        "101010101000101101101011001101",
+        "101010101011101101101011001101",
+        "101010101000001101101011001101",
+        "101010101011111101101011001101",
+        "101010101000000001101011001101",
+        "101010101111111111101011001101",
+        "101010100000000000001011001101",
+        "101010111111111111111011001101",
+        "101010000000000000000011001101",
+        "101011111111111111111111001101",
+        "101000000000000000000000001101",
+    ]), "start": (2, 12), "wrap": False},
 ]
 
 @dataclass
@@ -207,17 +341,34 @@ class MenuItem:
         self.action = action
         self.x = x
         self.y = y
-        self.colour = colour
+        self.base_colour = colour
         self.font = pygame.font.SysFont("monospace", 28, bold=True)
+        self.pulse = 0.0
 
-    def draw(self, surface, selected=False):
-        colour = YELLOW if selected else self.colour
+    def draw(self, surface, selected=False, time=0.0):
+        if selected:
+            self.pulse = math.sin(time * 3) * 0.3 + 0.7
+            r = int(YELLOW[0] * self.pulse + GREEN[0] * (1 - self.pulse))
+            g = int(YELLOW[1] * self.pulse + GREEN[1] * (1 - self.pulse))
+            b = int(YELLOW[2] * self.pulse + GREEN[2] * (1 - self.pulse))
+            colour = (r, g, b)
+        else:
+            colour = self.base_colour
         text = self.font.render(self.label, True, colour)
         rect = text.get_rect(center=(self.x, self.y))
         if selected:
+            decay = (math.sin(time * 6) * 0.5 + 0.5)
+            pulse_alpha = int(180 * decay)
+            glow_surf = pygame.Surface((rect.width + 40, rect.height + 10), pygame.SRCALPHA)
+            glow_rect = glow_surf.get_rect(center=(rect.width // 2 + 20, rect.height // 2 + 5))
+            pygame.draw.rect(glow_surf, (YELLOW[0], YELLOW[1], YELLOW[2], pulse_alpha), glow_rect, border_radius=8)
+            surface.blit(glow_surf, (rect.left - 20, rect.top - 5))
             pointer = self.font.render(">", True, YELLOW)
             ptr_rect = pointer.get_rect(midright=(rect.left - 15, rect.centery))
             surface.blit(pointer, ptr_rect)
+            pointer2 = self.font.render("<", True, YELLOW)
+            ptr2_rect = pointer2.get_rect(midleft=(rect.right + 15, rect.centery))
+            surface.blit(pointer2, ptr2_rect)
         surface.blit(text, rect)
 
 class Menu:
@@ -226,6 +377,7 @@ class Menu:
         self.subtitle = subtitle
         self.items = items
         self.selected = 0
+        self.time = 0.0
 
     def handle_event(self, event) -> Optional[str]:
         if event.type == pygame.KEYDOWN:
@@ -237,10 +389,48 @@ class Menu:
                 return self.items[self.selected].action
         return None
 
+    def draw_title_border(self, surface):
+        for x in range(40, WINDOW_WIDTH - 40, GRID_SIZE):
+            draw_cell(surface, DARK_GREEN, x // GRID_SIZE, 1, inset=2)
+            draw_cell(surface, DARK_GREEN, x // GRID_SIZE, 9, inset=2)
+        left_col = (WINDOW_WIDTH // 2 - 140) // GRID_SIZE
+        right_col = (WINDOW_WIDTH // 2 + 140) // GRID_SIZE
+        for y in range(2, 9):
+            draw_cell(surface, DARK_GREEN, left_col, y, inset=2)
+            draw_cell(surface, DARK_GREEN, right_col, y, inset=2)
+
+    def draw_snake_decoration(self, surface, time):
+        snake_positions = [
+            (0.1, 0.15), (0.15, 0.12), (0.2, 0.1), (0.25, 0.12), (0.3, 0.15),
+            (0.35, 0.12), (0.4, 0.1), (0.45, 0.12), (0.5, 0.15), (0.55, 0.12),
+            (0.6, 0.1), (0.65, 0.12), (0.7, 0.15), (0.75, 0.12), (0.8, 0.1),
+            (0.85, 0.12), (0.9, 0.15),
+        ]
+        offset = (time * 30) % 640
+        for i, (fx, fy) in enumerate(snake_positions):
+            x = int((fx * 640 + offset) % 640)
+            y = int(fy * 480)
+            alpha = max(50, 200 - i * 10)
+            if alpha > 50:
+                col = x // GRID_SIZE
+                row = y // GRID_SIZE
+                if 0 <= col < COLS and 0 <= row < ROWS:
+                    colour = (0, alpha, 0) if i % 3 != 0 else (alpha // 2, alpha, alpha // 2)
+                    s = pygame.Surface((GRID_SIZE, GRID_SIZE), pygame.SRCALPHA)
+                    pygame.draw.rect(s, colour, (1, 1, GRID_SIZE - 2, GRID_SIZE - 2))
+                    surface.blit(s, (col * GRID_SIZE, row * GRID_SIZE))
+
     def draw(self, surface):
         surface.fill(BLACK)
-        title_font = pygame.font.SysFont("monospace", 42, bold=True)
-        title_text = title_font.render(self.title, True, GREEN)
+        self.draw_snake_decoration(surface, self.time)
+        self.draw_title_border(surface)
+        title_font = pygame.font.SysFont("monospace", 44, bold=True)
+        glow_colour = (0, max(100, int(180 + math.sin(self.time * 2) * 60)), 0)
+        for dx, dy in [(-2,0),(2,0),(0,-2),(0,2)]:
+            glow = title_font.render(self.title, True, (0, max(50, glow_colour[1]//3), 0))
+            gr = glow.get_rect(center=(WINDOW_WIDTH // 2 + dx, 80 + dy))
+            surface.blit(glow, gr)
+        title_text = title_font.render(self.title, True, LIGHT_GREEN)
         title_rect = title_text.get_rect(center=(WINDOW_WIDTH // 2, 80))
         surface.blit(title_text, title_rect)
         if self.subtitle:
@@ -249,7 +439,10 @@ class Menu:
             sub_rect = sub_text.get_rect(center=(WINDOW_WIDTH // 2, 115))
             surface.blit(sub_text, sub_rect)
         for i, item in enumerate(self.items):
-            item.draw(surface, selected=(i == self.selected))
+            item.draw(surface, selected=(i == self.selected), time=self.time)
+        version_font = pygame.font.SysFont("monospace", 12)
+        version_text = version_font.render("v1.2.0", True, DARK_GREEN)
+        surface.blit(version_text, (WINDOW_WIDTH - 60, WINDOW_HEIGHT - 20))
 
 def get_maze_walls(maze_data):
     if maze_data is None:
@@ -280,6 +473,8 @@ class SnakeGame:
         self.maze_data = None
         self.walls: List[Tuple[int, int]] = []
         self.wrap = True
+        self.paused = False
+        self.dir_buffer: deque = deque()
         self.reset()
 
     def setup_mode(self, mode: str, level_index: int = -1):
@@ -307,12 +502,17 @@ class SnakeGame:
             start_x, start_y = COLS // 2, ROWS // 2
         self.body = [(start_x, start_y), (start_x - 1, start_y), (start_x - 2, start_y)]
         self.direction = RIGHT
-        self.next_direction = RIGHT
+        self.dir_buffer.clear()
         self.food = self._find_food()
         self.score = 0
         self.speed = INITIAL_SPEED
         self.game_over = False
         self.won = False
+        self.paused = False
+
+    def toggle_pause(self):
+        if not self.game_over and not self.won:
+            self.paused = not self.paused
 
     def _find_food(self) -> Tuple[int, int]:
         occupied = set(self.body) | set(self.walls)
@@ -326,13 +526,15 @@ class SnakeGame:
 
     def change_direction(self, new_dir):
         opposite = {UP: DOWN, DOWN: UP, LEFT: RIGHT, RIGHT: LEFT}
-        if new_dir != opposite.get(self.direction):
-            self.next_direction = new_dir
+        last = self.dir_buffer[-1] if self.dir_buffer else self.direction
+        if new_dir != opposite.get(last) and len(self.dir_buffer) < 3:
+            self.dir_buffer.append(new_dir)
 
     def tick(self):
-        if self.game_over or self.won:
+        if self.game_over or self.won or self.paused:
             return
-        self.direction = self.next_direction
+        if self.dir_buffer:
+            self.direction = self.dir_buffer.popleft()
         head = self.body[0]
         dx, dy = self.direction
         new_head = (head[0] + dx, head[1] + dy)
@@ -399,9 +601,16 @@ class SnakeGame:
         mode_text = font.render(self.get_mode_name(), True, GREY)
         surface.blit(mode_text, (WINDOW_WIDTH - mode_text.get_width() - 10, 10))
         surface.blit(font.render(f"LEN: {len(self.body)}", True, GREY), (10, 30))
+        surface.blit(font.render(f"SPD: {self.speed:.0f}", True, GREY), (10, 50))
         best = self.score_keeper.get_best(self.get_mode_name())
         if best > 0:
             surface.blit(font.render(f"BEST: {best}", True, YELLOW), (WINDOW_WIDTH - mode_text.get_width() - 10, 30))
+        if self.paused:
+            overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 140))
+            surface.blit(overlay, (0, 0))
+            draw_text(surface, "PAUSED", 52, YELLOW, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 20)
+            draw_text(surface, "Press P to resume", 20, WHITE, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 30)
         if self.won:
             overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 160))
@@ -423,11 +632,12 @@ def level_select_menu(surface, clock, score_keeper) -> Optional[Tuple[str, int]]
         label = f"Level {i+1} — {level['name']}"
         if best > 0:
             label += f"  (best: {best})"
-        items.append(MenuItem(label, ("select", i), WINDOW_WIDTH // 2, 160 + i * 40))
-    items.append(MenuItem("Back", "back", WINDOW_WIDTH // 2, 160 + len(items) * 40, colour=RED))
+        items.append(MenuItem(label, ("select", i), WINDOW_WIDTH // 2, 140 + i * 32))
+    items.append(MenuItem("Back", "back", WINDOW_WIDTH // 2, 140 + len(items) * 32, colour=RED))
     menu = Menu("SELECT LEVEL", items, "Arrow keys to navigate, Enter to select")
     while True:
-        clock.tick(30)
+        dt = clock.tick(30)
+        menu.time += dt / 1000.0
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return None
@@ -440,13 +650,19 @@ def level_select_menu(surface, clock, score_keeper) -> Optional[Tuple[str, int]]
         pygame.display.flip()
 
 def high_scores_screen(surface, clock, score_keeper):
+    scroll_offset = 0
     while True:
         clock.tick(30)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return
-            if event.type == pygame.KEYDOWN and event.key in (pygame.K_ESCAPE, pygame.K_SPACE, pygame.K_RETURN):
-                return
+            if event.type == pygame.KEYDOWN:
+                if event.key in (pygame.K_ESCAPE, pygame.K_SPACE, pygame.K_RETURN):
+                    return
+                if event.key == pygame.K_DOWN:
+                    scroll_offset = min(scroll_offset + 1, max(0, 15 - 10))
+                if event.key == pygame.K_UP:
+                    scroll_offset = max(scroll_offset - 1, 0)
         surface.fill(BLACK)
         title_font = pygame.font.SysFont("monospace", 38, bold=True)
         title_text = title_font.render("HIGH SCORES", True, GREEN)
@@ -468,6 +684,7 @@ def high_scores_screen(surface, clock, score_keeper):
                 surface.blit(score_font.render(str(entry.score), True, colour), (230, y))
                 surface.blit(score_font.render(entry.mode, True, colour), (350, y))
         draw_text(surface, "Press ESC or SPACE to return", 16, GREY, WINDOW_WIDTH // 2, WINDOW_HEIGHT - 30)
+        draw_text(surface, "Use UP/DOWN to scroll", 12, DARK_GREEN, WINDOW_WIDTH // 2, WINDOW_HEIGHT - 15)
         pygame.display.flip()
 
 def main_menu(surface, clock, score_keeper) -> Optional[str]:
@@ -478,9 +695,10 @@ def main_menu(surface, clock, score_keeper) -> Optional[str]:
         MenuItem("High Scores", "scores", WINDOW_WIDTH // 2, 290),
         MenuItem("Quit", "quit", WINDOW_WIDTH // 2, 330, colour=RED),
     ]
-    menu = Menu("SNAKE", items, "The classic Nokia game — extended")
+    menu = Menu("SNAKE", items, "The classic Nokia game — extended edition")
     while True:
-        clock.tick(30)
+        dt = clock.tick(30)
+        menu.time += dt / 1000.0
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return "quit"
@@ -510,22 +728,32 @@ def run_game(surface, clock, game: SnakeGame, score_keeper: ScoreKeeper):
                             score_keeper.add_score(ScoreEntry(score=game.score, mode=game.get_mode_name(), length=len(game.body)))
                         return "menu"
                 else:
-                    if event.key in (pygame.K_UP, pygame.K_w):
-                        game.change_direction(UP)
-                    elif event.key in (pygame.K_DOWN, pygame.K_s):
-                        game.change_direction(DOWN)
-                    elif event.key in (pygame.K_LEFT, pygame.K_a):
-                        game.change_direction(LEFT)
-                    elif event.key in (pygame.K_RIGHT, pygame.K_d):
-                        game.change_direction(RIGHT)
+                    if event.key == pygame.K_p:
+                        game.toggle_pause()
+                    if not game.paused:
+                        if event.key in (pygame.K_UP, pygame.K_w):
+                            game.change_direction(UP)
+                        elif event.key in (pygame.K_DOWN, pygame.K_s):
+                            game.change_direction(DOWN)
+                        elif event.key in (pygame.K_LEFT, pygame.K_a):
+                            game.change_direction(LEFT)
+                        elif event.key in (pygame.K_RIGHT, pygame.K_d):
+                            game.change_direction(RIGHT)
         if not game.game_over and not game.won:
-            tick_interval = 1000.0 / game.speed
-            while tick_timer >= tick_interval:
-                game.tick()
-                tick_timer -= tick_interval
+            if not game.paused:
+                tick_interval = 1000.0 / game.speed
+                while tick_timer >= tick_interval:
+                    game.tick()
+                    tick_timer -= tick_interval
         else:
             tick_timer = 0.0
         game.draw(surface)
+        if game.paused:
+            overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 140))
+            surface.blit(overlay, (0, 0))
+            draw_text(surface, "PAUSED", 52, YELLOW, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 20)
+            draw_text(surface, "Press P to resume", 20, WHITE, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 30)
         pygame.display.flip()
 
 def main():

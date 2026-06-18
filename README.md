@@ -10,20 +10,25 @@
 
 A faithful recreation of the classic Nokia Snake game with modern enhancements. Built with Python and pygame-ce.
 
-> **Latest version: v1.1.0** — [View Changelog](CHANGELOG.md)
+> **Latest version: v1.2.0** — [View Changelog](CHANGELOG.md)
 
 ## Features
 
 - **Main Menu** — Choose your game mode before playing
 - **Normal Mode** — Snake wraps around the screen edges (no wall death)
 - **Classic Mode** — Wall collision ends the game, just like the original Nokia phone
-- **6 Maze Levels** — Pre-designed obstacle courses with increasing difficulty:
-  1. Open Field
-  2. Bordered
-  3. Pillars
-  4. Corridors
-  5. Spiral
-  6. Crossfire
+- **11 Maze Levels** — Pre-designed obstacle courses with increasing difficulty:
+  1. Open Field (wrap-around)
+  2. Bordered (no obstacles)
+  3. Box
+  4. Tunnel
+  5. Pillars
+  6. Corridors
+  7. Maze
+  8. Zigzag
+  9. Fortress
+  10. Crossfire
+  11. Spiral
 - **Persistent High Scores** — Top 15 scores saved locally across sessions
 - **Progressive Difficulty** — Snake speeds up as you eat more food
 - **Retro Aesthetic** — Green-on-black monochrome style with pixel-perfect rendering
@@ -59,7 +64,7 @@ Guide the snake to eat red food pellets. Each pellet grows the snake by one segm
    ```
 3. **Run the game:**
    ```bash
-   python snake.py
+   python main.py
    ```
 
 ### Option 2: Portable EXE (no Python required)
@@ -70,7 +75,7 @@ Download the latest `snake.exe` from the [Releases](https://github.com/vihaanvp/
 
 ```bash
 pip install pyinstaller
-pyinstaller --onefile --windowed --name snake --icon=icons/snake_logo.ico --distpath builds snake.py
+pyinstaller --onefile --windowed --name snake --icon=icons/snake_logo.ico --distpath builds main.py
 ```
 
 The executable will be placed in the `builds/` folder.
@@ -82,7 +87,7 @@ snake-game/
 ├── icons/                      # Icon files
 │   ├── snake_logo.png
 │   └── snake_logo.ico
-├── snake.py                    # Main game source code
+├── main.py                     # Main game source code
 ├── generate_icon.py            # Icon generation script
 ├── README.md                   # This file
 ├── CHANGELOG.md                # Version history
